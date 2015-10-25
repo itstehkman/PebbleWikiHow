@@ -1,16 +1,29 @@
 {
-    "appKeys": {},
+    "appKeys": {
+        "query": 0,
+        "steps": 1
+    },
     "capabilities": [
         ""
     ],
     "companyName": "kamoussa@ucsd.edu",
-    "longName": "dictation_ex",
+    "longName": "WikiHow for Pebble",
     "projectType": "native",
     "resources": {
-        "media": []
+        "media": [
+            {
+                "file": "images/toucan.png",
+                "name": "toucan",
+                "targetPlatforms": [
+                    "basalt",
+                    "chalk"
+                ],
+                "type": "png"
+            }
+        ]
     },
     "sdkVersion": "3",
-    "shortName": "dictation_ex",
+    "shortName": "falcon",
     "targetPlatforms": [
         "basalt",
         "chalk"

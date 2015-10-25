@@ -1,118 +1,93 @@
 #include <pebble.h>
 
-#define NUM_QUESTIONS 5
+#include "wiki.h"
 
 static Window *s_main_window;
-static TextLayer *s_question_layer, *s_prompt_layer;
+static TextLayer *s_query_layer, *s_wiki_layer;
+static BitmapLayer *s_bitmap_layer;
+static GBitmap *s_example_bitmap;
 
 static DictationSession *s_dictation_session;
-static char s_last_text[256];
-
-static char s_questions[5][64] = {
-  "Which animal has a long trunk?",
-  "What color is the sky?",
-  "Which city is the capital of the UK?",
-  "Who was the first man on the Moon?",
-  "In which state is Silicon Valley?"
-};
-
-static char s_answers[5][32] = {
-  "lephant",  // E/elephant
-  "lue",      // Blue/blue
-  "London",
-  "Armstrong",
-  "California"
-};
-
-static int s_current_question, s_correct_answers;
-static bool s_speaking_enabled;
-
-/********************************* Quiz Logic *********************************/
-
-static void next_question_handler(void *context) {
-  if(s_current_question == NUM_QUESTIONS) {
-    // Quiz is over
-    window_set_background_color(s_main_window, GColorDukeBlue);
-    text_layer_set_text(s_question_layer, "Quiz Finished!");
-
-    static char s_result_buff[32];
-    snprintf(s_result_buff, sizeof(s_result_buff), "You got %d of %d correct!", 
-             s_correct_answers, NUM_QUESTIONS);
-    text_layer_set_text(s_prompt_layer, s_result_buff);
-  } else {
-    // Next question
-    text_layer_set_text(s_question_layer, s_questions[s_current_question]);
-    text_layer_set_text(s_prompt_layer, "Press Select to speak your answer!");
-    window_set_background_color(s_main_window, GColorDarkGray);
-    s_speaking_enabled = true;
-  }
-}
-
-static void check_answer(char *answer) {
-  bool correct = strstr(answer, s_answers[s_current_question]);
-
-  correct ? vibes_double_pulse() : vibes_long_pulse();
-  text_layer_set_text(s_question_layer, correct ? "Correct!" : "Wrong!");
-  text_layer_set_text(s_prompt_layer, (s_current_question == NUM_QUESTIONS - 1) 
-                      ? "" : "Here comes the next question...");
-  window_set_background_color(s_main_window, correct ? GColorGreen : GColorRed);
-  s_correct_answers += correct ? 1 : 0;
-
-  s_current_question++;
-
-  app_timer_register(3000, next_question_handler, NULL);
-}
+static char s_last_text[1024];
 
 /******************************* Dictation API ********************************/
 
 static void dictation_session_callback(DictationSession *session, DictationSessionStatus status, 
                                        char *transcription, void *context) {
+   
   if(status == DictationSessionStatusSuccess) {
-    // Check this answer
-    check_answer(transcription);
+    
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Transcription:\t%s", transcription);
+    
+    // Send to JS
+    DictionaryIterator *iter;
+    app_message_outbox_begin(&iter);     
+    Tuplet tuple = TupletCString(0, transcription);
+                                 
+    dict_write_tuplet(iter, &tuple);
+    dict_write_end(iter);
+
+    app_message_outbox_send();
+                                 
   } else {
     APP_LOG(APP_LOG_LEVEL_ERROR, "Transcription failed.\n\nError ID:\n%d", (int)status);
   }
+  
 }
 
-/************************************ App *************************************/
+/************************************ Callbacks *************************************/
+static void in_received_handler(DictionaryIterator *iter, void *context) {
+  
+  Tuple *data = dict_find(iter, 1);
+  APP_LOG(APP_LOG_LEVEL_DEBUG, "Received from JS :\t%s", data->value->cstring);
+  
+  wiki_init(data->value->cstring);
+  
+}
 
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
-  if(s_speaking_enabled) {
-    // Start voice dictation UI
-    dictation_session_start(s_dictation_session);
-    s_speaking_enabled = false;
-  }
+  // Start voice dictation UI
+  dictation_session_start(s_dictation_session);
 }
 
 static void click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
 }
 
+/************************************ App *************************************/
+
 static void window_load(Window *window) {
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
 
-  s_question_layer = text_layer_create(GRect(5, 5, bounds.size.w - 10, bounds.size.h));
-  text_layer_set_font(s_question_layer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
-  text_layer_set_text_color(s_question_layer, GColorWhite);
-  text_layer_set_text_alignment(s_question_layer, GTextAlignmentCenter);
-  text_layer_set_background_color(s_question_layer, GColorClear);
-  layer_add_child(window_layer, text_layer_get_layer(s_question_layer));
-
-  s_prompt_layer = text_layer_create(GRect(5, 120, bounds.size.w - 10, bounds.size.h));
-  text_layer_set_text(s_prompt_layer, "Press Select to speak your answer!");
-  text_layer_set_font(s_prompt_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
-  text_layer_set_text_color(s_prompt_layer, GColorWhite);
-  text_layer_set_text_alignment(s_prompt_layer, GTextAlignmentCenter);
-  text_layer_set_background_color(s_prompt_layer, GColorClear);
-  layer_add_child(window_layer, text_layer_get_layer(s_prompt_layer));
+  s_query_layer = text_layer_create(GRect(5, 120, bounds.size.w - 10, bounds.size.h - 30));
+  
+  //toucan
+  s_example_bitmap = gbitmap_create_with_resource(RESOURCE_ID_toucan);
+  s_bitmap_layer = bitmap_layer_create(GRect(5, -5, bounds.size.w-20, bounds.size.h-25));
+  bitmap_layer_set_bitmap(s_bitmap_layer, s_example_bitmap);
+  bitmap_layer_set_compositing_mode(s_bitmap_layer, GCompOpSet);
+  layer_add_child(window_layer, bitmap_layer_get_layer(s_bitmap_layer));
+ 
+  //text
+  text_layer_set_text(s_query_layer, "Press select and say what you want!");
+  text_layer_set_font(s_query_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  text_layer_set_text_color(s_query_layer, GColorDarkGray);
+  text_layer_set_text_alignment(s_query_layer, GTextAlignmentCenter);
+  text_layer_set_background_color(s_query_layer, GColorClear);
+//   layer_set_frame((Layer *)s_query_layer, GRect(x, y, w, h));
+  layer_add_child(window_layer, text_layer_get_layer(s_query_layer));
 }
 
 static void window_unload(Window *window) {
-  text_layer_destroy(s_prompt_layer);
-  text_layer_destroy(s_question_layer);
+  text_layer_destroy(s_query_layer);
+  text_layer_destroy(s_wiki_layer);
+  
+  gbitmap_destroy(s_example_bitmap);
+  bitmap_layer_destroy(s_bitmap_layer);
+
 }
+
 
 static void init() {
   s_main_window = window_create();
@@ -124,13 +99,11 @@ static void init() {
   window_stack_push(s_main_window, true);
 
   // Create new dictation session
-  s_dictation_session = dictation_session_create(sizeof(s_last_text), 
-                                                 dictation_session_callback, NULL);
-
-  window_set_background_color(s_main_window, GColorDarkGray);
-  s_current_question = 0;
-  text_layer_set_text(s_question_layer, s_questions[s_current_question]);
-  s_speaking_enabled = true;
+  s_dictation_session = dictation_session_create(sizeof(s_last_text), dictation_session_callback, NULL);
+  window_set_background_color(s_main_window, GColorWhite);
+  
+  app_message_register_inbox_received(in_received_handler);
+  app_message_open(3000, 3000);
 }
 
 static void deinit() {
