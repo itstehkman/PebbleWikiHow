@@ -1,0 +1,23 @@
+{
+    "appKeys": {},
+    "capabilities": [
+        ""
+    ],
+    "companyName": "kamoussa@ucsd.edu",
+    "longName": "dictation_ex",
+    "projectType": "native",
+    "resources": {
+        "media": []
+    },
+    "sdkVersion": "3",
+    "shortName": "dictation_ex",
+    "targetPlatforms": [
+        "basalt",
+        "chalk"
+    ],
+    "uuid": "3d37a714-150f-41f7-999b-8799f9351d24",
+    "versionLabel": "1.0",
+    "watchapp": {
+        "watchface": false
+    }
+}
