@@ -9,6 +9,7 @@ static GBitmap *s_example_bitmap;
 
 static DictationSession *s_dictation_session;
 static char s_last_text[1024];
+Tuple *data;
 
 /******************************* Dictation API ********************************/
 
@@ -38,10 +39,14 @@ static void dictation_session_callback(DictationSession *session, DictationSessi
 /************************************ Callbacks *************************************/
 static void in_received_handler(DictionaryIterator *iter, void *context) {
   
-  Tuple *data = dict_find(iter, 1);
+  data = dict_find(iter, 1);
   APP_LOG(APP_LOG_LEVEL_DEBUG, "Received from JS :\t%s", data->value->cstring);
   
-  wiki_init(data->value->cstring);
+  char *string = data->value->cstring;
+  char *data2 = calloc(5000, sizeof(char));
+  strcpy(data2, string);
+  printf("data2: %s\n", data2);
+  wiki_init(data2);
   
 }
 

@@ -16,20 +16,23 @@ var getWiki = function(query){
   
   xhrRequest(url, 'GET', 
         function(responseText) {
-          
-          console.log('raw: ' + responseText)
-          
+                    
           if(responseText !== "Error")
             var json = JSON.parse(responseText);
           else
             return false;
           
-          console.log('json: ' + json);
+          var string = '';
+          for(var x in json){
+            string += json[x] + '`';
+          }
+          
+          console.log('string: ' + string);
           
           // Assemble dictionary using our keys
           var dictionary = {
             "query": query,
-            "steps": json
+            "steps": string
           };
     
           // Send to Pebble
