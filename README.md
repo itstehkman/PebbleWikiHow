@@ -9,4 +9,4 @@ Toucan is our solution. Using Pebble's Voice Dictation API to transcribe your vo
 
 Together, we can do anything! 
 
-![alt tag](http://imgur.com/X92myWN)
+![alt tag](http://imgur.com/X92myWN.png)
