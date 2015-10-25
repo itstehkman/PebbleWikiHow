@@ -1,5 +1,5 @@
 # Toucan: wikiHow for Pebble!
-wikiHow for Pebble through voice recognition!
+*wikiHow for Pebble through voice recognition!*
 
 How do I flex??? No longer must we fish smart phones out our pockets to google for instructions; simply ask your watch!
 
