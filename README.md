@@ -10,3 +10,9 @@ Toucan is our solution. Using Pebble's Voice Dictation API to transcribe your vo
 Together, we can do anything! 
 
 ![alt tag](https://raw.github.com/itstehkman/PebbleWikiHow/master/resources/images/IRL.png)
+
+#Update: WE WON!!!!!!!!!!
+
+![alt tag](https://raw.github.com/itstehkman/PebbleWikiHow/master/resources/images/winner.jpg)
+
+http://devpost.com/software/wikihow-for-pebble
