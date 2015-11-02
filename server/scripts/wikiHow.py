@@ -15,15 +15,15 @@ if len(sys.argv) < 2:
 query = sys.argv[1].lower()
 if not query:
 	throw_err()
+# remove how to and how do i from query
+query = query.replace("how to ", "").replace("how do i ", "")
 r = requests.get('http://wikihow.com/api.php?action=query&list=search&srsearch=%s&utf8=&format=json' % query)
 search_results = r.json()
 search_results = [results["title"] for results in search_results["query"]["search"]]
 if not search_results:
 	throw_err()
 
-# remove how to and how do i from query
-s_query = query.replace("how to ", "").replace("how do i ", "")
-best_title = process.extractOne(s_query, search_results)[0].encode('ascii','replace')
+best_title = process.extractOne(query, search_results)[0].encode('ascii','replace')
 #print best_title
 if not best_title:
 	throw_err()
